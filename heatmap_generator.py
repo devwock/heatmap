@@ -25,19 +25,19 @@ class HeatmapGenerator:
         if not data:
             print('좌표 데이터가 없습니다.')
             return
-        cls.initialize()
-        refine_data = cls.data_to_coords(data, mode)
-        cls.draw(refine_data, mode)
+        cls._initialize()
+        refine_data = cls._data_to_coords(data, mode)
+        cls._draw(refine_data, mode)
 
     @classmethod
-    def initialize(cls):
+    def _initialize(cls):
         image = Image.open(cls.TEMPLATE_HEATMAP_PATH)
         cls.heatmap_width, cls.heatmap_height = image.size
         image.close()
-        plt.register_cmap(cmap=cls.get_color_map())
+        plt.register_cmap(cmap=cls._get_color_map())
 
     @classmethod
-    def get_array_size(cls, mode):
+    def _get_array_size(cls, mode):
         # 향후 모드 추가되면 여기 추가할 것
         if mode == DrawMode.MAP:
             rows = cls.heatmap_height
@@ -48,16 +48,16 @@ class HeatmapGenerator:
         return rows, columns
 
     @classmethod
-    def data_to_coords(cls, data, mode):
+    def _data_to_coords(cls, data, mode):
         refined_data = {}
-        height, width = cls.get_array_size(mode)
+        height, width = cls._get_array_size(mode)
         for key, value in data.items():
             if len(value) == 0:
                 continue
             coord_data = np.zeros(height * width)
             coord_data = coord_data.reshape((height, width))
             for coord_tuple in value:
-                coord = cls.convert_coord(coord_tuple, height, width)
+                coord = cls._convert_coord(coord_tuple, height, width)
                 if coord:
                     x = round(coord[0])
                     y = round(coord[1])
@@ -66,7 +66,7 @@ class HeatmapGenerator:
         return refined_data
 
     @classmethod
-    def convert_coord(cls, coord_tuple, height, width):
+    def _convert_coord(cls, coord_tuple, height, width):
         x = coord_tuple[0]
         y = coord_tuple[1]
         division = coord_tuple[2]
@@ -80,9 +80,9 @@ class HeatmapGenerator:
         return x * w, abs(y * h - h)
 
     @classmethod
-    def draw(cls, data, mode):
+    def _draw(cls, data, mode):
         for key, value in data.items():
-            plt.figure(figsize=cls.get_figure_size()).add_axes([0, 0, 1, 1])
+            plt.figure(figsize=cls._get_figure_size()).add_axes([0, 0, 1, 1])
             plt.imshow(img.imread(cls.TEMPLATE_HEATMAP_PATH))
             if mode == DrawMode.MAP:
                 value = filters.gaussian_filter(value, sigma=variables.GAUSSIAN_SIGMA)
@@ -102,7 +102,7 @@ class HeatmapGenerator:
             print(f'Save {variables.OUTPUT_FOLDER}{key}.png complete')
 
     @classmethod
-    def get_color_map(cls):
+    def _get_color_map(cls):
         ncolors = 256
         color_array = plt.get_cmap('jet')(range(ncolors))
         color_array[:, -1] = np.linspace(0.0, 1.0, ncolors)
@@ -110,7 +110,7 @@ class HeatmapGenerator:
         return color_map
 
     @classmethod
-    def get_figure_size(cls):
+    def _get_figure_size(cls):
         dpi = plt.rcParams['figure.dpi']
         im_data = img.imread(cls.TEMPLATE_HEATMAP_PATH)
         height, width, depth = im_data.shape
